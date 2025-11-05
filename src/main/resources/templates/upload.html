@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="layout :: head"> </head>
+  <body>
+    <div th:replace="layout :: nav"></div>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 bg-slate-800">
+      <div class="px-4 py-6 sm:px-0 fade-in">
+        <!-- Page Header -->
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-white mb-2">
+            <i class="fas fa-upload mr-3 text-blue-400"></i>
+            Upload JAR for Analysis
+          </h1>
+          <p class="text-gray-400">
+            Upload Java Archive (JAR) files for comprehensive security analysis
+          </p>
+        </div>
+
+        <!-- Upload Card -->
+        <div
+          class="bg-dark-200 rounded-xl p-8 border-2 border-dashed border-gray-600"
+        >
+          <form
+            id="uploadForm"
+            th:action="@{/api/artifacts/upload}"
+            method="post"
+            enctype="multipart/form-data"
+            class="space-y-6"
+          >
+            <!-- File Upload Area -->
+            <div class="text-center">
+              <div
+                class="mx-auto w-24 h-24 mb-4 rounded-full bg-dark-300 flex items-center justify-center"
+              >
+                <i class="fas fa-file-archive text-3xl text-blue-400"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-white mb-2">
+                Select JAR File
+              </h3>
+              <p class="text-gray-400 mb-4">
+                Choose a Java Archive file to analyze
+              </p>
+
+              <div class="mt-4">
+                <input
+                  type="file"
+                  name="file"
+                  id="fileInput"
+                  accept=".jar"
+                  class="hidden"
+                  required
+                />
+                <label
+                  for="fileInput"
+                  class="cursor-pointer inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  <i class="fas fa-folder-open mr-2"></i>
+                  Choose File
+                </label>
+              </div>
+
+              <div id="fileName" class="mt-4 text-sm text-gray-400 hidden">
+                <i class="fas fa-file mr-2"></i>
+                <span id="fileNameText"></span>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center pt-6">
+              <button
+                type="submit"
+                id="submitBtn"
+                class="inline-flex items-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="fas fa-search mr-2"></i>
+                Start Analysis
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Information Section -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-dark-200 rounded-lg p-4">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+              <h4 class="font-semibold text-white">Supported Files</h4>
+            </div>
+            <p class="text-sm text-gray-400">
+              JAR (Java Archive) files only. Maximum size: 50MB
+            </p>
+          </div>
+
+          <div class="bg-dark-200 rounded-lg p-4">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-clock text-yellow-400 mr-2"></i>
+              <h4 class="font-semibold text-white">Analysis Time</h4>
+            </div>
+            <p class="text-sm text-gray-400">
+              Typically takes 10-30 seconds depending on file size
+            </p>
+          </div>
+
+          <div class="bg-dark-200 rounded-lg p-4">
+            <div class="flex items-center mb-2">
+              <i class="fas fa-shield-alt text-green-400 mr-2"></i>
+              <h4 class="font-semibold text-white">Security</h4>
+            </div>
+            <p class="text-sm text-gray-400">
+              Files are analyzed in isolated environment
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Loading Modal -->
+    <div
+      id="loadingModal"
+      class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50"
+    >
+      <div class="bg-dark-200 rounded-xl p-8 max-w-md w-full mx-4">
+        <div class="text-center">
+          <div
+            class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"
+          ></div>
+          <h3 class="text-xl font-semibold text-white mb-2">
+            Analyzing JAR File
+          </h3>
+          <p class="text-gray-400">
+            Please wait while we analyze your file for security
+            vulnerabilities...
+          </p>
+          <div class="mt-4 text-sm text-gray-500">
+            <i class="fas fa-shield-alt mr-2"></i>
+            This may take a few moments
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:replace="layout :: footer"></div>
+
+    <script>
+      document
+        .getElementById("fileInput")
+        .addEventListener("change", function (e) {
+          const fileNameDiv = document.getElementById("fileName");
+          const fileNameText = document.getElementById("fileNameText");
+
+          if (this.files.length > 0) {
+            const file = this.files[0];
+            fileNameText.textContent =
+              file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB)";
+            fileNameDiv.classList.remove("hidden");
+          } else {
+            fileNameDiv.classList.add("hidden");
+          }
+        });
+
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const fileInput = document.getElementById("fileInput");
+          const submitBtn = document.getElementById("submitBtn");
+
+          if (!fileInput.files.length) {
+            alert("Please select a JAR file to upload.");
+            return;
+          }
+
+          // Show loading modal
+          const loadingModal = document.getElementById("loadingModal");
+          loadingModal.classList.remove("hidden");
+          submitBtn.disabled = true;
+
+          // Create FormData and submit
+          const formData = new FormData(this);
+
+          fetch(this.action, {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Upload failed");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              // Redirect to result page with artifact ID
+              window.location.href = "/result?id=" + data.id;
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Upload failed: " + error.message);
+            })
+            .finally(() => {
+              loadingModal.classList.add("hidden");
+              submitBtn.disabled = false;
+            });
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="layout :: head"> </head>
+  <body>
+    <div th:replace="layout :: nav"></div>
+
+    <main class="max-w-6xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div class="px-4 py-6 sm:px-0 fade-in">
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"
+          ></div>
+          <h3 class="text-lg font-semibold text-white mb-2">
+            Loading Artifact
+          </h3>
+          <p class="text-gray-400">Please wait...</p>
+        </div>
+
+        <!-- Artifact Details -->
+        <div id="artifactContent" class="hidden">
+          <!-- Header -->
+          <div class="flex justify-between items-start mb-8">
+            <div>
+              <h1
+                class="text-3xl font-bold text-white mb-2"
+                id="artifactFileName"
+              >
+                Artifact Details
+              </h1>
+              <div class="flex items-center space-x-4 text-gray-400">
+                <span id="artifactId">ID: Loading...</span>
+                <span>•</span>
+                <span id="uploadTime">Uploaded: Loading...</span>
+              </div>
+            </div>
+            <div class="flex space-x-3">
+              <button
+                onclick="window.location.href='/artifacts'"
+                class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to List
+              </button>
+              <button
+                onclick="window.location.href='/upload'"
+                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <i class="fas fa-upload mr-2"></i>
+                New Analysis
+              </button>
+            </div>
+          </div>
+
+          <!-- Status Card -->
+          <div class="bg-dark-200 rounded-xl p-6 mb-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-4">
+                <div>
+                  <h3 class="text-lg font-semibold text-white">
+                    Analysis Status
+                  </h3>
+                  <p class="text-gray-400" id="statusDescription">
+                    Current analysis status
+                  </p>
+                </div>
+              </div>
+              <div
+                id="statusBadge"
+                class="px-4 py-2 rounded-lg text-sm font-medium"
+              >
+                Loading...
+              </div>
+            </div>
+          </div>
+
+          <!-- Findings Summary -->
+          <div
+            id="findingsSummary"
+            class="hidden bg-dark-200 rounded-xl p-6 mb-6"
+          >
+            <h3 class="text-xl font-semibold text-white mb-4">
+              <i class="fas fa-chart-pie mr-2 text-blue-400"></i>
+              Findings Summary
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="text-center p-4 bg-dark-300 rounded-lg">
+                <div class="text-2xl font-bold text-red-400" id="summaryHigh">
+                  0
+                </div>
+                <div class="text-sm text-gray-400 mt-1">High Severity</div>
+              </div>
+              <div class="text-center p-4 bg-dark-300 rounded-lg">
+                <div
+                  class="text-2xl font-bold text-yellow-400"
+                  id="summaryMedium"
+                >
+                  0
+                </div>
+                <div class="text-sm text-gray-400 mt-1">Medium Severity</div>
+              </div>
+              <div class="text-center p-4 bg-dark-300 rounded-lg">
+                <div class="text-2xl font-bold text-blue-400" id="summaryLow">
+                  0
+                </div>
+                <div class="text-sm text-gray-400 mt-1">Low Severity</div>
+              </div>
+              <div class="text-center p-4 bg-dark-300 rounded-lg">
+                <div
+                  class="text-2xl font-bold text-green-400"
+                  id="summaryTotal"
+                >
+                  0
+                </div>
+                <div class="text-sm text-gray-400 mt-1">Total Findings</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Findings -->
+          <div id="detailedFindings" class="hidden">
+            <div class="bg-dark-200 rounded-xl p-6">
+              <h3 class="text-xl font-semibold text-white mb-4">
+                <i class="fas fa-search mr-2 text-green-400"></i>
+                Detailed Security Findings
+              </h3>
+              <div id="findingsList" class="space-y-4">
+                <!-- Findings will be populated here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div id="errorMessage" class="hidden bg-red-900 rounded-xl p-6">
+            <div class="flex items-center mb-3">
+              <i class="fas fa-exclamation-triangle text-red-400 mr-3"></i>
+              <h3 class="text-lg font-semibold text-white">Analysis Error</h3>
+            </div>
+            <p class="text-gray-300" id="errorText"></p>
+          </div>
+
+          <!-- Pending Analysis -->
+          <div
+            id="pendingAnalysis"
+            class="hidden bg-yellow-900 rounded-xl p-6 text-center"
+          >
+            <i class="fas fa-clock text-4xl text-yellow-400 mb-4"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">
+              Analysis in Progress
+            </h3>
+            <p class="text-gray-300 mb-4">
+              This artifact is currently being analyzed. Please check back
+              later.
+            </p>
+            <button
+              onclick="location.reload()"
+              class="inline-flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors"
+            >
+              <i class="fas fa-sync-alt mr-2"></i>
+              Refresh Page
+            </button>
+          </div>
+
+          <!-- No Findings -->
+          <div
+            id="noFindings"
+            class="hidden bg-green-900 rounded-xl p-6 text-center"
+          >
+            <i class="fas fa-check-circle text-4xl text-green-400 mb-4"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">
+              No Security Issues Found
+            </h3>
+            <p class="text-gray-300">
+              The analysis completed successfully and no security
+              vulnerabilities were detected.
+            </p>
+          </div>
+        </div>
+
+        <!-- Not Found State -->
+        <div id="notFoundState" class="hidden text-center py-12">
+          <i class="fas fa-question-circle text-4xl text-gray-600 mb-4"></i>
+          <h3 class="text-xl font-semibold text-white mb-2">
+            Artifact Not Found
+          </h3>
+          <p class="text-gray-400 mb-6">
+            The requested artifact could not be found.
+          </p>
+          <button
+            onclick="window.location.href='/artifacts'"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            <i class="fas fa-archive mr-2"></i>
+            Browse Artifacts
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <div th:replace="layout :: footer"></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const artifactId = urlParams.get("id");
+
+        if (!artifactId) {
+          showNotFound();
+          return;
+        }
+
+        loadArtifact(artifactId);
+      });
+
+      function loadArtifact(artifactId) {
+        fetch(`/api/artifacts/${artifactId}`)
+          .then((response) => {
+            if (!response.ok) {
+              if (response.status === 404) {
+                throw new Error("NOT_FOUND");
+              }
+              throw new Error("Failed to load artifact");
+            }
+            return response.json();
+          })
+          .then((artifact) => {
+            displayArtifact(artifact);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            if (error.message === "NOT_FOUND") {
+              showNotFound();
+            } else {
+              showError("Failed to load artifact: " + error.message);
+            }
+          });
+      }
+
+      function displayArtifact(artifact) {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("artifactContent").classList.remove("hidden");
+
+        // Update basic info
+        document.getElementById("artifactFileName").textContent =
+          artifact.fileName;
+        document.getElementById(
+          "artifactId"
+        ).textContent = `ID: ${artifact.id}`;
+        document.getElementById(
+          "uploadTime"
+        ).textContent = `Uploaded: ${new Date(
+          artifact.uploadTime
+        ).toLocaleString()}`;
+
+        // Update status
+        const statusBadge = document.getElementById("statusBadge");
+        statusBadge.textContent = artifact.status;
+        statusBadge.className = `px-4 py-2 rounded-lg text-sm font-medium ${
+          artifact.status === "ANALYZED"
+            ? "bg-green-900 text-green-300"
+            : artifact.status === "FAILED"
+            ? "bg-red-900 text-red-300"
+            : "bg-yellow-900 text-yellow-300"
+        }`;
+
+        // Handle different statuses
+        if (artifact.status === "ANALYZED") {
+          showAnalyzedArtifact(artifact);
+        } else if (artifact.status === "FAILED") {
+          showFailedArtifact(artifact);
+        } else if (artifact.status === "PENDING") {
+          showPendingArtifact();
+        }
+      }
+
+      function showAnalyzedArtifact(artifact) {
+        document.getElementById("findingsSummary").classList.remove("hidden");
+
+        if (artifact.findingsJson && artifact.findingsJson.length > 0) {
+          document
+            .getElementById("detailedFindings")
+            .classList.remove("hidden");
+          displayFindings(artifact.findingsJson);
+        } else {
+          document.getElementById("noFindings").classList.remove("hidden");
+        }
+      }
+
+      function showFailedArtifact(artifact) {
+        document.getElementById("errorMessage").classList.remove("hidden");
+        const errorText = document.getElementById("errorText");
+
+        if (artifact.findingsJson && artifact.findingsJson.error) {
+          errorText.textContent = artifact.findingsJson.error;
+        } else {
+          errorText.textContent =
+            "The analysis failed to complete. Please try uploading the file again.";
+        }
+      }
+
+      function showPendingArtifact() {
+        document.getElementById("pendingAnalysis").classList.remove("hidden");
+      }
+
+      function displayFindings(findings) {
+        const findingsList = document.getElementById("findingsList");
+        let highCount = 0,
+          mediumCount = 0,
+          lowCount = 0;
+
+        findings.forEach((finding, index) => {
+          const severity = finding.severity || "LOW";
+
+          // Count by severity
+          if (severity === "HIGH") highCount++;
+          else if (severity === "MEDIUM") mediumCount++;
+          else lowCount++;
+
+          const findingElement = document.createElement("div");
+          findingElement.className = `bg-dark-300 rounded-lg p-4 border-l-4 ${
+            severity === "HIGH"
+              ? "border-red-500"
+              : severity === "MEDIUM"
+              ? "border-yellow-500"
+              : "border-blue-500"
+          }`;
+
+          findingElement.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${
+                              severity === "HIGH"
+                                ? "bg-red-900 text-red-300"
+                                : severity === "MEDIUM"
+                                ? "bg-yellow-900 text-yellow-300"
+                                : "bg-blue-900 text-blue-300"
+                            }">
+                                ${severity}
+                            </span>
+                            <span class="ml-3 px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">
+                                ${finding.type || "unknown"}
+                            </span>
+                        </div>
+                        <span class="text-sm text-gray-400">Finding #${
+                          index + 1
+                        }</span>
+                    </div>
+                    
+                    <h4 class="font-semibold text-white mb-2">
+                        <i class="fas fa-file-code mr-2 text-blue-400"></i>
+                        ${finding.className || "Unknown Class"}
+                    </h4>
+                    
+                    ${
+                      finding.suspiciousMethods
+                        ? `
+                        <div class="mb-3">
+                            <span class="text-sm text-gray-400 block mb-1">Suspicious Methods:</span>
+                            <div class="flex flex-wrap gap-1">
+                                ${Array.from(finding.suspiciousMethods)
+                                  .map(
+                                    (method) =>
+                                      `<span class="px-2 py-1 bg-red-800 rounded text-xs text-red-200">${method}</span>`
+                                  )
+                                  .join("")}
+                            </div>
+                        </div>
+                    `
+                        : ""
+                    }
+                    
+                    ${
+                      finding.sink
+                        ? `
+                        <div class="mb-3">
+                            <span class="text-sm text-gray-400 block mb-1">Security Sink:</span>
+                            <code class="px-2 py-1 bg-red-800 rounded text-sm text-red-200">${finding.sink}</code>
+                        </div>
+                    `
+                        : ""
+                    }
+                    
+                    ${
+                      finding.package
+                        ? `
+                        <div class="mb-3">
+                            <span class="text-sm text-gray-400 block mb-1">Risky Package:</span>
+                            <code class="px-2 py-1 bg-yellow-800 rounded text-sm text-yellow-200">${finding.package}</code>
+                        </div>
+                    `
+                        : ""
+                    }
+                    
+                    ${
+                      finding.message
+                        ? `
+                        <div class="text-sm text-gray-400">${finding.message}</div>
+                    `
+                        : ""
+                    }
+                `;
+
+          findingsList.appendChild(findingElement);
+        });
+
+        // Update summary counts
+        document.getElementById("summaryHigh").textContent = highCount;
+        document.getElementById("summaryMedium").textContent = mediumCount;
+        document.getElementById("summaryLow").textContent = lowCount;
+        document.getElementById("summaryTotal").textContent = findings.length;
+      }
+
+      function showNotFound() {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("notFoundState").classList.remove("hidden");
+      }
+
+      function showError(message) {
+        document.getElementById("loadingState").classList.add("hidden");
+        document.getElementById("artifactContent").classList.remove("hidden");
+        document.getElementById("errorMessage").classList.remove("hidden");
+        document.getElementById("errorText").textContent = message;
+      }
+    </script>
+  </body>
+</html>

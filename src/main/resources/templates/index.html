@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="layout :: head"> </head>
+  <body>
+    <div th:replace="layout :: nav"></div>
+
+    <main class="max-w-7xl mx-auto bg-slate-800 py-6 sm:px-6 lg:px-8">
+      <div class="px-4 py-6 sm:px-0 fade-in">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+          <h1 class="text-4xl font-bold text-white mb-4">
+            <i class="fas fa-shield-alt text-blue-500 mr-4"></i>
+            Gadget Chain Analyzer
+          </h1>
+          <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+            An advanced and intelligent static code analysis system that
+            thoroughly examines Java artifacts to detect, evaluate, and mitigate
+            potential security vulnerabilities, enhancing the robustness and
+            security posture of Java applications.
+          </p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div class="bg-dark-200 rounded-lg p-6 border-l-4 border-blue-500">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <i class="fas fa-upload text-blue-400 text-2xl"></i>
+              </div>
+              <div class="ml-4">
+                <h3 class="text-lg font-semibold text-white">
+                  Upload & Analyze
+                </h3>
+                <p class="text-gray-400 mt-1">
+                  Upload JAR files for security analysis
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-dark-200 rounded-lg p-6 border-l-4 border-green-500">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <i class="fas fa-search text-green-400 text-2xl"></i>
+              </div>
+              <div class="ml-4">
+                <h3 class="text-lg font-semibold text-white">Deep Analysis</h3>
+                <p class="text-gray-400 mt-1">
+                  Bytecode-level security scanning
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-dark-200 rounded-lg p-6 border-l-4 border-purple-500">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <i class="fas fa-chart-bar text-purple-400 text-2xl"></i>
+              </div>
+              <div class="ml-4">
+                <h3 class="text-lg font-semibold text-white">
+                  Results Dashboard
+                </h3>
+                <p class="text-gray-400 mt-1">Comprehensive findings report</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="bg-dark-200 rounded-xl p-8">
+            <h2 class="text-2xl font-bold text-white mb-4">
+              <i class="fas fa-upload mr-3 text-blue-400"></i>
+              Start Analysis
+            </h2>
+            <p class="text-gray-300 mb-6">
+              Upload a JAR file to begin security analysis. Our system will scan
+              for:
+            </p>
+            <ul class="text-gray-400 space-y-2 mb-6">
+              <li>
+                <i class="fas fa-check-circle text-green-400 mr-2"></i
+                >Deserialization vulnerabilities
+              </li>
+              <li>
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>Dangerous
+                method calls
+              </li>
+              <li>
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>Risky
+                package usage
+              </li>
+              <li>
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>Security
+                sinks and gadgets
+              </li>
+            </ul>
+            <a
+              th:href="@{/upload}"
+              class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            >
+              <i class="fas fa-upload mr-2"></i>
+              Upload JAR File
+            </a>
+          </div>
+
+          <div class="bg-dark-200 rounded-xl p-8">
+            <h2 class="text-2xl font-bold text-white mb-4">
+              <i class="fas fa-archive mr-3 text-purple-400"></i>
+              View Artifacts
+            </h2>
+            <p class="text-gray-300 mb-6">
+              Browse previously analyzed artifacts and review their security
+              findings.
+            </p>
+            <ul class="text-gray-400 space-y-2 mb-6">
+              <li>
+                <i class="fas fa-database text-purple-400 mr-2"></i>Access
+                analysis history
+              </li>
+              <li>
+                <i class="fas fa-chart-line text-purple-400 mr-2"></i>Track
+                security trends
+              </li>
+              <li>
+                <i class="fas fa-download text-purple-400 mr-2"></i>Export
+                findings
+              </li>
+              <li>
+                <i class="fas fa-search text-purple-400 mr-2"></i>Detailed
+                vulnerability reports
+              </li>
+            </ul>
+            <a
+              th:href="@{/artifacts}"
+              class="inline-flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+            >
+              <i class="fas fa-archive mr-2"></i>
+              Browse Artifacts
+            </a>
+          </div>
+        </div>
+
+        <!-- Recent Activity (Placeholder) -->
+        <div class="mt-12 bg-dark-200 rounded-xl p-6">
+          <h2 class="text-2xl font-bold text-white mb-6">
+            <i class="fas fa-history mr-3 text-gray-400"></i>
+            Recent Activity
+          </h2>
+          <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-inbox text-4xl mb-4"></i>
+            <p>
+              No recent activity. Upload your first JAR file to get started.
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div th:replace="layout :: footer"></div>
+  </body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layout :: head">
+</head>
+<body>
+    <div th:replace="layout :: nav"></div>
+    
+    <main class="max-w-6xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0 fade-in">
+            <!-- Page Header -->
+            <div class="mb-8 flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">
+                        <i class="fas fa-chart-bar mr-3 text-green-400"></i>
+                        Analysis Results
+                    </h1>
+                    <p class="text-gray-400" id="resultSubtitle">Security analysis findings</p>
+                </div>
+                <button onclick="window.location.href='/upload'" 
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-upload mr-2"></i>
+                    New Analysis
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="bg-dark-200 rounded-xl p-8 text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <h3 class="text-lg font-semibold text-white mb-2">Loading Results</h3>
+                <p class="text-gray-400">Fetching analysis findings...</p>
+            </div>
+
+            <!-- Results Container -->
+            <div id="resultsContainer" class="hidden">
+                <!-- Summary Card -->
+                <div class="bg-dark-200 rounded-xl p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-white" id="artifactName">Artifact Analysis</h2>
+                        <div class="flex items-center space-x-4">
+                            <span id="statusBadge" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                            <span id="uploadTime" class="text-sm text-gray-400"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Severity Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-dark-300 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-red-400 mb-1" id="highCount">0</div>
+                            <div class="text-sm text-gray-400">High Severity</div>
+                        </div>
+                        <div class="bg-dark-300 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-yellow-400 mb-1" id="mediumCount">0</div>
+                            <div class="text-sm text-gray-400">Medium Severity</div>
+                        </div>
+                        <div class="bg-dark-300 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-blue-400 mb-1" id="lowCount">0</div>
+                            <div class="text-sm text-gray-400">Low Severity</div>
+                        </div>
+                        <div class="bg-dark-300 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-400 mb-1" id="totalCount">0</div>
+                            <div class="text-sm text-gray-400">Total Findings</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Findings Section -->
+                <div class="bg-dark-200 rounded-xl p-6">
+                    <h3 class="text-xl font-semibold text-white mb-4">
+                        <i class="fas fa-search mr-2 text-blue-400"></i>
+                        Security Findings
+                    </h3>
+                    
+                    <div id="findingsList" class="space-y-4">
+                        <!-- Findings will be populated here -->
+                    </div>
+
+                    <!-- No Findings -->
+                    <div id="noFindings" class="hidden text-center py-8">
+                        <i class="fas fa-check-circle text-4xl text-green-400 mb-4"></i>
+                        <h4 class="text-lg font-semibold text-white mb-2">No Security Issues Found</h4>
+                        <p class="text-gray-400">The analyzed JAR file appears to be secure.</p>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="mt-6 flex justify-end space-x-4">
+                    <button onclick="window.location.href='/artifacts'" 
+                            class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors">
+                        <i class="fas fa-archive mr-2"></i>
+                        View All Artifacts
+                    </button>
+                    <button onclick="window.print()" 
+                            class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors">
+                        <i class="fas fa-print mr-2"></i>
+                        Print Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="hidden bg-red-900 rounded-xl p-6 text-center">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+                <h3 class="text-xl font-semibold text-white mb-2">Failed to Load Results</h3>
+                <p class="text-gray-300 mb-4" id="errorMessage"></p>
+                <button onclick="window.location.href='/upload'" 
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                    <i class="fas fa-upload mr-2"></i>
+                    Try Again
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div th:replace="layout :: footer"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const artifactId = urlParams.get('id');
+            
+            if (!artifactId) {
+                showError('No artifact ID provided in URL');
+                return;
+            }
+
+            loadArtifactResults(artifactId);
+        });
+
+        function loadArtifactResults(artifactId) {
+            fetch(`/api/artifacts/${artifactId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch artifact');
+                    }
+                    return response.json();
+                })
+                .then(artifact => {
+                    displayArtifactResults(artifact);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showError(error.message);
+                });
+        }
+
+        function displayArtifactResults(artifact) {
+            // Hide loading, show results
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+
+            // Update basic info
+            document.getElementById('artifactName').textContent = `Analysis: ${artifact.fileName}`;
+            document.getElementById('resultSubtitle').textContent = `Security analysis for ${artifact.fileName}`;
+            document.getElementById('uploadTime').textContent = new Date(artifact.uploadTime).toLocaleString();
+            
+            // Update status badge
+            const statusBadge = document.getElementById('statusBadge');
+            statusBadge.textContent = artifact.status;
+            statusBadge.className = `px-3 py-1 rounded-full text-sm font-medium ${
+                artifact.status === 'ANALYZED' ? 'bg-green-900 text-green-300' :
+                artifact.status === 'FAILED' ? 'bg-red-900 text-red-300' :
+                'bg-yellow-900 text-yellow-300'
+            }`;
+
+            // Process findings
+            if (artifact.findingsJson && Array.isArray(artifact.findingsJson)) {
+                displayFindings(artifact.findingsJson);
+            } else {
+                document.getElementById('noFindings').classList.remove('hidden');
+            }
+        }
+
+        function displayFindings(findings) {
+            const findingsList = document.getElementById('findingsList');
+            let highCount = 0, mediumCount = 0, lowCount = 0;
+
+            findings.forEach((finding, index) => {
+                const severity = finding.severity || 'LOW';
+                const type = finding.type || 'unknown';
+                
+                // Count by severity
+                if (severity === 'HIGH') highCount++;
+                else if (severity === 'MEDIUM') mediumCount++;
+                else lowCount++;
+
+                const findingElement = document.createElement('div');
+                findingElement.className = `bg-dark-300 rounded-lg p-4 border-l-4 ${
+                    severity === 'HIGH' ? 'border-red-500' :
+                    severity === 'MEDIUM' ? 'border-yellow-500' :
+                    'border-blue-500'
+                }`;
+                
+                findingElement.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex items-center">
+                            <span class="px-2 py-1 rounded text-xs font-medium ${
+                                severity === 'HIGH' ? 'bg-red-900 text-red-300' :
+                                severity === 'MEDIUM' ? 'bg-yellow-900 text-yellow-300' :
+                                'bg-blue-900 text-blue-300'
+                            }">
+                                ${severity}
+                            </span>
+                            <span class="ml-3 px-2 py-1 bg-gray-700 rounded text-xs text-gray-300">
+                                ${type}
+                            </span>
+                        </div>
+                        <span class="text-sm text-gray-400">#${index + 1}</span>
+                    </div>
+                    <h4 class="font-semibold text-white mb-2">${finding.className || 'Unknown Class'}</h4>
+                    ${finding.suspiciousMethods ? `
+                        <div class="mb-2">
+                            <span class="text-sm text-gray-400">Suspicious Methods:</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${Array.from(finding.suspiciousMethods).map(method => 
+                                    `<span class="px-2 py-1 bg-red-800 rounded text-xs text-red-200">${method}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${finding.sink ? `
+                        <div class="mb-2">
+                            <span class="text-sm text-gray-400">Security Sink:</span>
+                            <code class="ml-2 px-2 py-1 bg-red-800 rounded text-sm text-red-200">${finding.sink}</code>
+                        </div>
+                    ` : ''}
+                    ${finding.package ? `
+                        <div class="mb-2">
+                            <span class="text-sm text-gray-400">Risky Package:</span>
+                            <code class="ml-2 px-2 py-1 bg-yellow-800 rounded text-sm text-yellow-200">${finding.package}</code>
+                        </div>
+                    ` : ''}
+                    ${finding.message ? `
+                        <div class="text-sm text-gray-400">${finding.message}</div>
+                    ` : ''}
+                `;
+                
+                findingsList.appendChild(findingElement);
+            });
+
+            // Update counts
+            document.getElementById('highCount').textContent = highCount;
+            document.getElementById('mediumCount').textContent = mediumCount;
+            document.getElementById('lowCount').textContent = lowCount;
+            document.getElementById('totalCount').textContent = findings.length;
+
+            // Show no findings if empty
+            if (findings.length === 0) {
+                document.getElementById('noFindings').classList.remove('hidden');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+    </script>
+</body>
+</html>

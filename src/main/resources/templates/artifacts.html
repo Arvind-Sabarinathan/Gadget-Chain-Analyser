@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="layout :: head"> </head>
+  <body>
+    <div th:replace="layout :: nav"></div>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 bg-slate-800">
+      <div class="px-4 py-6 sm:px-0 fade-in">
+        <!-- Page Header -->
+        <div class="mb-8 flex justify-between items-center">
+          <div>
+            <h1 class="text-3xl font-bold text-white mb-2">
+              <i class="fas fa-archive mr-3 text-purple-400"></i>
+              Artifacts History
+            </h1>
+            <p class="text-gray-400">
+              Browse previously analyzed JAR files and their security findings
+            </p>
+          </div>
+          <button
+            onclick="window.location.href='/upload'"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+          >
+            <i class="fas fa-upload mr-2"></i>
+            New Analysis
+          </button>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-dark-300 rounded-lg p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm">Total Artifacts</p>
+                <p class="text-2xl font-bold text-white" id="totalArtifacts">
+                  0
+                </p>
+              </div>
+              <i class="fas fa-archive text-2xl text-purple-400"></i>
+            </div>
+          </div>
+          <div class="bg-dark-300 rounded-lg p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm">Analyzed</p>
+                <p class="text-2xl font-bold text-white" id="analyzedCount">
+                  0
+                </p>
+              </div>
+              <i class="fas fa-check-circle text-2xl text-green-400"></i>
+            </div>
+          </div>
+          <div class="bg-dark-300 rounded-lg p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm">Failed</p>
+                <p class="text-2xl font-bold text-white" id="failedCount">0</p>
+              </div>
+              <i class="fas fa-exclamation-triangle text-2xl text-red-400"></i>
+            </div>
+          </div>
+          <div class="bg-dark-300 rounded-lg p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-400 text-sm">Pending</p>
+                <p class="text-2xl font-bold text-white" id="pendingCount">0</p>
+              </div>
+              <i class="fas fa-clock text-2xl text-yellow-400"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="bg-slate-800 rounded-xl mb-6">
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0"
+          >
+            <div class="flex-1 max-w-md">
+              <div class="relative">
+                <input
+                  type="text"
+                  id="searchInput"
+                  placeholder="Search artifacts..."
+                  class="w-full pl-10 pr-4 py-2 bg-dark-300 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                />
+                <i
+                  class="fas fa-search absolute left-3 top-3 text-gray-400"
+                ></i>
+              </div>
+            </div>
+            <div class="flex space-x-4">
+              <select
+                id="statusFilter"
+                class="bg-dark-300 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">All Status</option>
+                <option value="ANALYZED">Analyzed</option>
+                <option value="PENDING">Pending</option>
+                <option value="FAILED">Failed</option>
+              </select>
+              <select
+                id="sortSelect"
+                class="bg-dark-300 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">By Name</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Artifacts Table -->
+        <div class="bg-dark-200 rounded-xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-dark-300">
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                  >
+                    File Name
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                  >
+                    Upload Time
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                  >
+                    Findings
+                  </th>
+                  <th
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="artifactsTableBody" class="divide-y divide-gray-700">
+                <!-- Artifacts will be populated here -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Loading State -->
+          <div id="loadingState" class="p-8 text-center">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"
+            ></div>
+            <p class="text-gray-400">Loading artifacts...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyState" class="hidden p-8 text-center">
+            <i class="fas fa-inbox text-4xl text-gray-600 mb-4"></i>
+            <h3 class="text-lg font-semibold text-white mb-2">
+              No Artifacts Found
+            </h3>
+            <p class="text-gray-400 mb-4">
+              Upload your first JAR file to get started with security analysis.
+            </p>
+            <button
+              onclick="window.location.href='/upload'"
+              class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            >
+              <i class="fas fa-upload mr-2"></i>
+              Upload First Artifact
+            </button>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div
+          id="pagination"
+          class="mt-6 flex justify-between items-center hidden"
+        >
+          <div class="text-sm text-gray-400">
+            Showing <span id="showingFrom">0</span> to
+            <span id="showingTo">0</span> of
+            <span id="totalItems">0</span> artifacts
+          </div>
+          <div class="flex space-x-2">
+            <button
+              id="prevBtn"
+              class="px-3 py-1 bg-dark-300 rounded text-gray-400 hover:bg-dark-400 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              id="nextBtn"
+              class="px-3 py-1 bg-dark-300 rounded text-gray-400 hover:bg-dark-400 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div th:replace="layout :: footer"></div>
+
+    <script>
+      let allArtifacts = [];
+      let currentPage = 1;
+      const itemsPerPage = 10;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        loadArtifacts();
+
+        // Event listeners for filters
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", filterArtifacts);
+        document
+          .getElementById("statusFilter")
+          .addEventListener("change", filterArtifacts);
+        document
+          .getElementById("sortSelect")
+          .addEventListener("change", filterArtifacts);
+
+        document
+          .getElementById("prevBtn")
+          .addEventListener("click", () => changePage(-1));
+        document
+          .getElementById("nextBtn")
+          .addEventListener("click", () => changePage(1));
+      });
+
+      function loadArtifacts() {
+        fetch("/api/artifacts")
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch artifacts");
+            }
+            return response.json();
+          })
+          .then((artifacts) => {
+            allArtifacts = artifacts;
+            updateStats(artifacts);
+            filterArtifacts();
+            document.getElementById("loadingState").classList.add("hidden");
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById("loadingState").classList.add("hidden");
+            document.getElementById("emptyState").classList.remove("hidden");
+          });
+      }
+
+      function updateStats(artifacts) {
+        document.getElementById("totalArtifacts").textContent =
+          artifacts.length;
+        document.getElementById("analyzedCount").textContent = artifacts.filter(
+          (a) => a.status === "ANALYZED"
+        ).length;
+        document.getElementById("failedCount").textContent = artifacts.filter(
+          (a) => a.status === "FAILED"
+        ).length;
+        document.getElementById("pendingCount").textContent = artifacts.filter(
+          (a) => a.status === "PENDING"
+        ).length;
+      }
+
+      function filterArtifacts() {
+        const searchTerm = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const statusFilter = document.getElementById("statusFilter").value;
+        const sortBy = document.getElementById("sortSelect").value;
+
+        let filtered = allArtifacts.filter((artifact) => {
+          const matchesSearch = artifact.fileName
+            .toLowerCase()
+            .includes(searchTerm);
+          const matchesStatus =
+            !statusFilter || artifact.status === statusFilter;
+          return matchesSearch && matchesStatus;
+        });
+
+        // Sort artifacts
+        filtered.sort((a, b) => {
+          switch (sortBy) {
+            case "newest":
+              return new Date(b.uploadTime) - new Date(a.uploadTime);
+            case "oldest":
+              return new Date(a.uploadTime) - new Date(b.uploadTime);
+            case "name":
+              return a.fileName.localeCompare(b.fileName);
+            default:
+              return 0;
+          }
+        });
+
+        displayArtifacts(filtered);
+      }
+
+      function displayArtifacts(artifacts) {
+        const tbody = document.getElementById("artifactsTableBody");
+        const emptyState = document.getElementById("emptyState");
+        const pagination = document.getElementById("pagination");
+
+        if (artifacts.length === 0) {
+          tbody.innerHTML = "";
+          emptyState.classList.remove("hidden");
+          pagination.classList.add("hidden");
+          return;
+        }
+
+        emptyState.classList.add("hidden");
+        pagination.classList.remove("hidden");
+
+        // Calculate pagination
+        const totalPages = Math.ceil(artifacts.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, artifacts.length);
+        const paginatedArtifacts = artifacts.slice(startIndex, endIndex);
+
+        // Update pagination info
+        document.getElementById("showingFrom").textContent = startIndex + 1;
+        document.getElementById("showingTo").textContent = endIndex;
+        document.getElementById("totalItems").textContent = artifacts.length;
+
+        // Enable/disable pagination buttons
+        document.getElementById("prevBtn").disabled = currentPage === 1;
+        document.getElementById("nextBtn").disabled =
+          currentPage === totalPages;
+
+        // Render table rows
+        tbody.innerHTML = paginatedArtifacts
+          .map(
+            (artifact) => `
+                <tr class="hover:bg-dark-300 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-archive text-blue-400 mr-3"></i>
+                            <div>
+                                <div class="text-sm font-medium text-white">${
+                                  artifact.fileName
+                                }</div>
+                                <div class="text-sm text-gray-400">ID: ${
+                                  artifact.id
+                                }</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                          artifact.status === "ANALYZED"
+                            ? "bg-green-900 text-green-300"
+                            : artifact.status === "FAILED"
+                            ? "bg-red-900 text-red-300"
+                            : "bg-yellow-900 text-yellow-300"
+                        }">
+                            ${artifact.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        ${new Date(artifact.uploadTime).toLocaleString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                        ${
+                          artifact.status === "ANALYZED" &&
+                          artifact.findingsJson
+                            ? `${artifact.findingsJson.length} finding(s)`
+                            : artifact.status === "FAILED"
+                            ? "Analysis failed"
+                            : "Pending analysis"
+                        }
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="viewArtifact('${artifact.id}')" 
+                                class="text-blue-400 hover:text-blue-300 mr-3 ${
+                                  artifact.status !== "ANALYZED"
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }"
+                                ${
+                                  artifact.status !== "ANALYZED"
+                                    ? "disabled"
+                                    : ""
+                                }>
+                            <i class="fas fa-eye mr-1"></i>View
+                        </button>
+                    </td>
+                </tr>
+            `
+          )
+          .join("");
+      }
+
+      function changePage(direction) {
+        const totalPages = Math.ceil(allArtifacts.length / itemsPerPage);
+        currentPage += direction;
+        currentPage = Math.max(1, Math.min(currentPage, totalPages));
+        filterArtifacts();
+      }
+
+      function viewArtifact(artifactId) {
+        window.location.href = `/result?id=${artifactId}`;
+      }
+    </script>
+  </body>
+</html>
